@@ -18,7 +18,7 @@ This repository now contains the authentication foundation and account-access fl
 1. Create a Supabase project at [supabase.com](https://supabase.com).
 2. In **Project Settings → API**, copy the **Project URL** and **Publishable key**.
 3. Copy `.env.example` to `.env.local` and fill in those two values. Do not add a service-role key.
-4. In the Supabase SQL Editor, run [`supabase/migrations/0001_profiles_auth.sql`](./supabase/migrations/0001_profiles_auth.sql).
+4. In the Supabase SQL Editor, run all the files in ./supabase/migrations/.
 5. In **Authentication → URL Configuration**, set the local Site URL to `http://localhost:3000` and add `http://localhost:3000/auth/confirm` to the redirect allow-list.
 6. In **Authentication → Email Templates**, ensure the confirmation and recovery links use the token hash callback format:
 
