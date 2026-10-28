@@ -3,62 +3,43 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { compatibilityQuestions } from "@/lib/onboarding/options";
+import { validateProfile } from "@/lib/profile/validation";
 
-export type OnboardingState = {
-  error?: string;
-  fieldErrors?: Record<string, string>;
-};
+export type OnboardingState = { error?: string; fieldErrors?: Record<string, string> };
+
+async function persistProfile(formData: FormData, editing: boolean): Promise<OnboardingState> {
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) return { error: "Your session has expired. Please sign in again." };
+  const { data: existing, error: readError } = await supabase.from("profiles")
+    .select("onboarding_completed_at").eq("id", user.id).maybeSingle();
+  if (readError) return { error: "We could not load your profile. Please try again." };
+  if (editing && !existing?.onboarding_completed_at) redirect("/onboarding");
+  if (!editing && existing?.onboarding_completed_at) redirect("/profile");
+
+  const { values, fieldErrors } = validateProfile(formData);
+  if (Object.keys(fieldErrors).length) return { fieldErrors };
+  // The account ID always comes from the verified session, never the form.
+  const { data, error } = await supabase.from("profiles").update({
+    display_name: values.displayName,
+    instagram_handle: values.instagramHandle,
+    interests: values.interests,
+    matching_opt_in: values.matchingOptIn === "yes",
+    compatibility_answers: values.compatibilityAnswers,
+    onboarding_completed_at: existing?.onboarding_completed_at ?? new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }).eq("id", user.id).select("id").maybeSingle();
+  if (error || !data) return { error: "We could not save your profile. Please try again." };
+  revalidatePath("/", "layout");
+  revalidatePath("/profile");
+  revalidatePath("/dashboard");
+  redirect(editing ? "/profile?saved=1" : "/profile");
+}
 
 export async function saveOnboarding(_: OnboardingState, formData: FormData): Promise<OnboardingState> {
-  const displayName = String(formData.get("displayName") ?? "").trim();
-  const instagramHandle = String(formData.get("instagramHandle") ?? "")
-    .trim()
-    .replace(/^@/, "");
-  const interests = formData.getAll("interests").filter((value): value is string => typeof value === "string");
-  const matching = formData.get("matchingOptIn");
+  return persistProfile(formData, false);
+}
 
-  const fieldErrors: Record<string, string> = {};
-  if (!displayName) fieldErrors.displayName = "Enter your name.";
-  if (displayName.length > 80) fieldErrors.displayName = "Name must be 80 characters or fewer.";
-  if (!instagramHandle) fieldErrors.instagramHandle = "Enter your Instagram handle.";
-  if (instagramHandle.length > 30 || !/^[A-Za-z0-9._]+$/.test(instagramHandle)) {
-    fieldErrors.instagramHandle = "Enter a valid Instagram handle.";
-  }
-  if (interests.length === 0) fieldErrors.interests = "Choose at least one interest.";
-  if (matching !== "yes" && matching !== "no") fieldErrors.matchingOptIn = "Choose yes or no.";
-
-  const compatibilityAnswers: Record<string, string> = {};
-  for (const question of compatibilityQuestions) {
-    const answer = formData.get(question.id);
-    if (typeof answer !== "string" || !question.answers.includes(answer as never)) {
-      fieldErrors[question.id] = "Choose an answer.";
-    } else {
-      compatibilityAnswers[question.id] = answer;
-    }
-  }
-
-  if (Object.keys(fieldErrors).length > 0) return { fieldErrors };
-
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Your session has expired. Please sign in again." };
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({
-      display_name: displayName,
-      instagram_handle: instagramHandle,
-      interests,
-      matching_opt_in: matching === "yes",
-      compatibility_answers: compatibilityAnswers,
-      onboarding_completed_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", user.id);
-
-  if (error) return { error: "We could not save your profile. Please try again." };
-
-  revalidatePath("/", "layout");
-  redirect("/dashboard");
+export async function updateProfile(_: OnboardingState, formData: FormData): Promise<OnboardingState> {
+  return persistProfile(formData, true);
 }

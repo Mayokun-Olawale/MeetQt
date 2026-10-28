@@ -47,10 +47,14 @@ export async function signIn(_: FormState, formData: FormData): Promise<FormStat
   if (!parsed.success) return validationState(parsed.error);
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) return { error: "Unable to sign in with those credentials." };
 
   revalidatePath("/", "layout");
+  const { data: profile, error: profileError } = await supabase.from("profiles")
+    .select("onboarding_completed_at").eq("id", data.user.id).maybeSingle();
+  if (profileError) return { error: "Signed in, but we could not load your profile. Please try again." };
+  if (!profile?.onboarding_completed_at) redirect("/onboarding");
   redirect(safeRedirectPath(formData.get("next")));
 }
 

@@ -2,13 +2,7 @@
 
 import { useState } from "react";
 
-type PasswordInputProps = {
-  id: string;
-  name: string;
-  autoComplete: string;
-  required?: boolean;
-  minLength?: number;
-};
+type PasswordInputProps = Omit<import("react").InputHTMLAttributes<HTMLInputElement>, "type"> & { id: string; name: string; autoComplete: string };
 
 function EyeIcon({ hidden }: { hidden: boolean }) {
   return hidden ? (
@@ -29,11 +23,13 @@ export function PasswordInput({
   autoComplete,
   required,
   minLength,
+  ...props
 }: PasswordInputProps) {
   const [visible, setVisible] = useState(false);
   return (
-    <span>
+    <span className="password-input">
       <input
+        {...props}
         id={id}
         name={name}
         type={visible ? "text" : "password"}
@@ -42,6 +38,7 @@ export function PasswordInput({
         autoComplete={autoComplete}
       />
       <button
+        className="password-toggle"
         type="button"
         onClick={() => setVisible((current) => !current)}
         aria-label={visible ? "Hide password" : "Show password"}

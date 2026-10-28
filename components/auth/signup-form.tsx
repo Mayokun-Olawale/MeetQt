@@ -1,28 +1,23 @@
 "use client";
 
 import Link from "next/link";
+import { FormField } from "@/components/ui/field";
 import { useActionState } from "react";
 import { signUp } from "@/app/actions/auth";
-import { FieldError, FormMessage } from "./form-message";
-import { PasswordInput } from "./password-input";
+import { FormMessage } from "./form-message";
 
 export function SignupForm() {
   const [state, action, pending] = useActionState(signUp, {});
   return (
-    <form action={action}>
+    <form action={action} className="meetq-form" aria-busy={pending}>
       <h1>Create your MeetQ account</h1>
-      <label htmlFor="email">Email</label>
-      <input id="email" name="email" type="email" required autoComplete="email" />
-      <FieldError state={state} name="email" />
-      <label htmlFor="password">Password</label>
-      <PasswordInput id="password" name="password" required minLength={8} autoComplete="new-password" />
-      <FieldError state={state} name="password" />
-      <label htmlFor="confirmPassword">Confirm password</label>
-      <PasswordInput id="confirmPassword" name="confirmPassword" required minLength={8} autoComplete="new-password" />
-      <FieldError state={state} name="confirmPassword" />
+      <p className="form-intro">Find people who share your interests.</p>
+      <FormField label="Email" state={state} name="email" type="email" required autoComplete="email" />
+      <FormField label="Password" state={state} type="password" name="password" required minLength={8} autoComplete="new-password" />
+      <FormField label="Confirm password" state={state} type="password" name="confirmPassword" required minLength={8} autoComplete="new-password" />
       <button type="submit" disabled={pending}>{pending ? "Creating account..." : "Sign up"}</button>
       <FormMessage state={state} />
-      <p>Already have an account? <Link href="/login">Sign in</Link></p>
+      <p className="form-footer">Already have an account? <Link href="/login">Sign in</Link></p>
     </form>
   );
 }
