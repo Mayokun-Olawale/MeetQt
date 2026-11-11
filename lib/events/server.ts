@@ -1,4 +1,5 @@
 import "server-only";
+import { demoFlyers } from "./demo-flyers";
 import { createClient } from "@/lib/supabase/server";
 import { parseEventFilters, type EventFilters } from "./filters";
 
@@ -43,10 +44,11 @@ export async function interestedEvents(userId: string) {
 }
 
 async function withFlyers(events: Event[]) {
+  events = events.map((event) => ({ ...event, flyer_url: demoFlyers[event.id] }));
   const paths = events.flatMap((event) => event.flyer_path ? [event.flyer_path] : []);
   if (!paths.length) return events;
   const supabase = await createClient();
   const { data } = await supabase.storage.from("event-flyers").createSignedUrls(paths, 3600);
   const urls = new Map(data?.map((item) => [item.path, item.signedUrl]));
-  return events.map((event) => ({ ...event, flyer_url: event.flyer_path ? (urls.get(event.flyer_path) ?? undefined) : undefined }));
+  return events.map((event) => ({ ...event, flyer_url: event.flyer_path ? (urls.get(event.flyer_path) ?? event.flyer_url) : event.flyer_url }));
 }
