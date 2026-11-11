@@ -1,3 +1,5 @@
+import { ownMatches } from "@/lib/matching/server";
+import { EventMatches } from "@/components/events/event-matches";
 import Link from "next/link";
 import { PageContainer, Card } from "@/components/ui/layout";
 import { requireCompleteProfile } from "@/lib/profile/server";
@@ -11,6 +13,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const selectedView = view === "interested" || view === "matches" ? view : "created";
   const { events, error } = selectedView === "created" ? await ownEvents(user.id)
     : selectedView === "interested" ? await interestedEvents(user.id) : { events: [], error: false };
+  const matching = selectedView === "matches" && profile.matching_opt_in ? await ownMatches() : null;
   return <PageContainer>
     {created === "1" && <p className="form-message form-message-success" role="status">Your event is published.</p>}
     <div className="dashboard-heading"><p className="eyebrow">Your plans, all together</p><h1>Welcome, {profile.display_name}</h1></div>
@@ -28,7 +31,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       {error ? <p role="alert" className="form-message">We couldn’t load your events. Please refresh and try again.</p> : events.length ? <div className="event-grid">{events.map((event) => <EventCard key={event.id} event={event} own />)}</div> : <Card className="empty-state"><h3>Got a plan in mind?</h3><p>You haven’t created any events yet.</p><Link href="/events/new">Add your first event</Link></Card>}
     </section>}
     {selectedView === "matches" && <section className="dashboard-section" aria-labelledby="my-matches"><h2 id="my-matches">My matches</h2>
-      {!profile.matching_opt_in ? <Card className="empty-state"><h3>Matching not enabled</h3><p>You’ve opted out of event matching. You can change this in your profile whenever you’re ready.</p><Link href="/profile/edit">Update matching preference</Link></Card> : <Card className="empty-state"><h3>No matches yet</h3><p>Event matching is coming soon.</p><Link href="/events">Discover events</Link></Card>}
+      {!profile.matching_opt_in ? <Card className="empty-state"><h3>Matching not enabled</h3><p>You’ve opted out of event matching. You can change this in your profile whenever you’re ready.</p><Link href="/profile/edit">Update matching preference</Link></Card> : matching?.error ? <p role="alert" className="form-message">We couldn’t load your matches. Please refresh and try again.</p> : matching && <EventMatches matches={matching.matches} serverNow={matching.serverNow} />}
     </section>}
       </div>
     </div>

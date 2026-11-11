@@ -246,3 +246,10 @@ input[type='file']::file-selector-button { background: var(--pink); color: var(-
   .dashboard-content .section-title { align-items: flex-start; flex-direction: column; }
   .dashboard-content h2, .dashboard-content .event-card h3 { font-size: 1.5rem; }
 }
+
+.match-list { display: grid; gap: 1.25rem; margin-top: 1rem; }
+.match-card { display: grid; gap: 1rem; overflow-wrap: anywhere; }
+.match-card h3 { font-family: Georgia, serif; font-size: 1.5rem; font-weight: 400; margin: 0; }
+.match-card h4 { margin: 0; }
+.match-countdown { background: var(--pink-soft); border-radius: var(--radius); padding: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.match-members { margin: 0; padding-left: 1.25rem; }
