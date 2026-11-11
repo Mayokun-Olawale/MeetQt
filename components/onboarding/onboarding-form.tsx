@@ -63,7 +63,7 @@ export function OnboardingForm({ initialValues, mode = "onboarding" }: {
         <legend>Would you like to opt into event matching?</legend>
         <p>
           If you opt in, 12 hours before an event you will be paired in a group of
-          2–4 people for the event.
+          2–5 people for the event. Members of your revealed group can view your name, Instagram, interests, and compatibility answers. Your email stays private.
         </p>
         <label className="choice"><input type="radio" name="matchingOptIn" value="yes" checked={values.matchingOptIn === "yes"} onChange={() => setValues({ ...values, matchingOptIn: "yes" })} required /> Yes, match me</label>
         <label className="choice"><input type="radio" name="matchingOptIn" value="no" checked={values.matchingOptIn === "no"} onChange={() => setValues({ ...values, matchingOptIn: "no" })} /> No, not yet</label>

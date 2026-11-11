@@ -1,4 +1,4 @@
--- Run in a test Supabase database after 0011. All fixtures are rolled back.
+-- Run in a test Supabase database after 0012. All fixtures are rolled back.
 begin;
 do $$
 declare n integer; member integer; event_id uuid;
@@ -62,6 +62,22 @@ begin
     where m->>'id' = md5('match-user-1')::uuid::text
   ) then raise exception 'Viewer included in peer list'; end if;
   if response::text like '%email%' then raise exception 'Private field leaked'; end if;
+  shared := public.group_member_profile(md5('match-event-5')::uuid, md5('match-user-2')::uuid);
+  if shared is null or shared->>'display_name' <> 'Member 2' then raise exception 'Group profile unavailable'; end if;
+  if (select array_agg(key order by key) from jsonb_object_keys(shared) key)
+     <> array['compatibility_answers', 'display_name', 'event_title', 'id', 'instagram_handle', 'interests'] then raise exception 'Unexpected shared profile fields'; end if;
+  if public.group_member_profile(md5('match-event-14')::uuid, md5('match-user-2')::uuid) is not null then raise exception 'Profile exposed before reveal'; end if;
+  if public.group_member_profile(md5('match-event-5')::uuid, md5('match-user-1')::uuid) is not null then raise exception 'Shared endpoint returned own account'; end if;
+  if public.group_member_profile(md5('match-event-5')::uuid, md5('match-user-13')::uuid) is not null then raise exception 'Unrelated profile exposed'; end if;
+  for member in 2..6 loop
+    if public.group_member_profile(md5('match-event-6')::uuid, md5('match-user-' || member)::uuid) is not null then allowed := allowed + 1; end if;
+  end loop;
+  if allowed <> 2 then raise exception 'Cross-group profile access'; end if;
+  if exists (select 1 from public.profiles where id = md5('match-user-2')::uuid) then raise exception 'Private profile row exposed'; end if;
+  update public.profiles set display_name = 'Forged edit' where id = md5('match-user-2')::uuid;
+  get diagnostics affected = row_count;
+  if affected <> 0 then raise exception 'Peer profile editable'; end if;
+
   begin
     perform * from public.event_match_members;
     raise exception 'Raw memberships accessible';
@@ -88,6 +104,7 @@ declare item jsonb;
 begin
   select value into item from jsonb_array_elements(public.my_event_matches()) where value->>'event_id' = md5('match-event-1')::uuid::text;
   if item->>'status' <> 'processing' or jsonb_array_length(item->'members') <> 0 then raise exception 'Stale opted-out member visible'; end if;
+  if public.group_member_profile(md5('match-event-1')::uuid, md5('match-user-2')::uuid) is not null then raise exception 'Opted-out profile exposed'; end if;
 end $$;
 reset role;
 select public.generate_due_event_matches();
@@ -96,6 +113,8 @@ update public.events set starts_at = now() - interval '1 minute' where id = md5(
 set local role authenticated;
 do $$ begin
   if exists(select 1 from jsonb_array_elements(public.my_event_matches()) where value->>'event_id' = md5('match-event-3')::uuid::text) then raise exception 'Cancelled event revealed'; end if;
+  if public.group_member_profile(md5('match-event-3')::uuid, md5('match-user-3')::uuid) is not null then raise exception 'Cancelled profile exposed'; end if;
+  if public.group_member_profile(md5('match-event-5')::uuid, md5('match-user-3')::uuid) is not null then raise exception 'Past-event profile exposed'; end if;
 end $$;
 select set_config('request.jwt.claim.sub', md5('match-user-2')::uuid::text, true);
 select set_config('request.jwt.claims', jsonb_build_object('sub', md5('match-user-2')::uuid, 'role', 'authenticated')::text, true);
