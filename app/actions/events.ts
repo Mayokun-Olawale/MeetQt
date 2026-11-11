@@ -8,7 +8,7 @@ import { flyerExtension } from "@/lib/events/flyer";
 import { eventSchema } from "@/lib/events/validation";
 import type { FormState } from "@/lib/validation/auth";
 import { validationState } from "@/lib/validation/auth";
-import { z } from "zod";
+import { databaseId } from "@/lib/validation/database-id";
 
 export async function createEvent(_: FormState, formData: FormData): Promise<FormState> {
   const { user } = await requireCompleteProfile();
@@ -41,7 +41,7 @@ export async function createEvent(_: FormState, formData: FormData): Promise<For
 
 export async function cancelEvent(_: FormState, formData: FormData): Promise<FormState> {
   const { user } = await requireCompleteProfile();
-  const id = z.uuid().safeParse(formData.get("eventId"));
+  const id = databaseId.safeParse(formData.get("eventId"));
   if (!id.success) return { error: "This event could not be found." };
   const supabase = await createClient();
   const { data, error } = await supabase.from("events").update({ status: "cancelled" })
@@ -50,4 +50,23 @@ export async function cancelEvent(_: FormState, formData: FormData): Promise<For
   revalidatePath("/events");
   revalidatePath("/dashboard");
   return { success: "Event cancelled." };
+}
+
+export async function saveEventInterest(eventId: string): Promise<{ error?: string }> {
+  const { user } = await requireCompleteProfile();
+  const id = databaseId.safeParse(eventId);
+  if (!id.success) return { error: "This event could not be found." };
+  const supabase = await createClient();
+  const { data: event, error: eventError } = await supabase.from("events").select("id")
+    .eq("id", id.data).eq("status", "published").gt("starts_at", new Date().toISOString()).maybeSingle();
+  if (eventError) return { error: "We couldn’t check this event. Please try again." };
+  if (!event) return { error: "This event has started or is no longer available. You can skip it to continue." };
+  const { error } = await supabase.from("event_interests").upsert(
+    { user_id: user.id, event_id: id.data },
+    { onConflict: "user_id,event_id", ignoreDuplicates: true },
+  );
+  if (error) return { error: "We couldn’t save your interest. Please try again." };
+  revalidatePath("/dashboard");
+  revalidatePath("/events");
+  return {};
 }

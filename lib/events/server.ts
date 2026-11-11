@@ -11,7 +11,10 @@ const columns = "categories, price_cents, audience, rsvp_required, rsvp_url, fly
 
 export async function discoverEvents(filters: EventFilters = parseEventFilters({})) {
   const supabase = await createClient();
-  let query = supabase.from("events").select(columns).eq("status", "published")
+  // RLS exposes only the signed-in user's interests. Exclude matching rows
+  // before ordering/limiting, so saved events never consume discovery slots.
+  let query = supabase.from("events").select(`${columns}, event_interests()`)
+    .is("event_interests", null).eq("status", "published")
     .gt("starts_at", new Date().toISOString());
   if (filters.categories.length) query = query.overlaps("categories", filters.categories);
   if (filters.audiences.length) query = query.in("audience", filters.audiences);
@@ -27,6 +30,15 @@ export async function ownEvents(userId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase.from("events").select(columns).eq("creator_id", userId)
     .order("starts_at", { ascending: false }).limit(100);
+  return { events: await withFlyers((data ?? []) as Event[]), error: Boolean(error) };
+}
+
+export async function interestedEvents(userId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("events")
+    .select(`${columns}, event_interests!inner(user_id)`)
+    .eq("event_interests.user_id", userId).eq("status", "published")
+    .gt("starts_at", new Date().toISOString()).order("starts_at").order("id");
   return { events: await withFlyers((data ?? []) as Event[]), error: Boolean(error) };
 }
 

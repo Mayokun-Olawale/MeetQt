@@ -1,5 +1,6 @@
 "use client";
 
+import { saveEventInterest } from "@/app/actions/events";
 import Image from "next/image";
 import Link from "next/link";
 import { useRef, useState, type PointerEvent } from "react";
@@ -16,16 +17,31 @@ export function EventDiscovery({ events }: { events: Event[] }) {
   const region = useRef<HTMLElement>(null);
   const seenIds = new Set(choices.map((choice) => choice.event.id));
   const event = events.find((candidate) => !seenIds.has(candidate.id));
-  const saving = false;
-  const saveError = "";
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const savingRef = useRef(false);
 
-  function choose(decision: SwipeDecision) {
-    if (!event) return;
+  async function choose(decision: SwipeDecision) {
+    if (!event || savingRef.current) return;
     setOffset(0);
     drag.current = null;
+    setSaveError("");
+    if (decision === "interested") {
+      savingRef.current = true;
+      setSaving(true);
+      try {
+        const result = await saveEventInterest(event.id);
+        if (result.error) { setSaveError(result.error); return; }
+      } catch {
+        setSaveError("We couldn’t save your interest. Please try again.");
+        return;
+      } finally {
+        savingRef.current = false;
+        setSaving(false);
+      }
+    }
     setChoices((current) => [...current, { event, decision }]);
-    setNotice(`${decision === "skip" ? "Skipped" : "Interested in"} ${event.title}.`);
+    setNotice(`${decision === "skip" ? "Skipped" : "Saved to Interested events on your dashboard:"} ${event.title}.`);
     region.current?.focus({ preventScroll: true });
   }
 
@@ -82,6 +98,6 @@ export function EventDiscovery({ events }: { events: Event[] }) {
       <div className="discovery-controls" aria-busy={saving}><button disabled={saving} className="button-secondary" onClick={() => choose("skip")}><span aria-hidden="true">←</span> Skip</button><button disabled={saving} onClick={() => choose("interested")}><span aria-hidden="true">♡</span> {saving ? "Saving…" : "Interested"}</button></div>
     </> : <div className="card discovery-end"><h2>You’re all caught up.</h2><p>Change your filters to find more plans, or revisit events you skipped.</p><div className="actions"><button onClick={() => { setChoices((current) => current.filter((choice) => choice.decision === "interested")); setNotice("Browsing skipped events again. Interested events stay on your dashboard."); region.current?.focus(); }}>Browse again</button><Link href="/events">Clear filters</Link></div></div>}
     {saveError && <p role="alert" className="form-message">{saveError}</p>}
-    <p className="field-hint discovery-note">Interest is temporary until you leave this page. Expressing interest does not complete an external RSVP.</p>
+    <p className="field-hint discovery-note">Interested events are saved to your <Link href="/dashboard?view=interested">Interested Events</Link>. Expressing interest does not complete an external RSVP.</p>
   </section>;
 }
