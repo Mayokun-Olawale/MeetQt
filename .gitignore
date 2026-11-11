@@ -437,3 +437,9 @@ out/
 *.msp
 
 MeetQ_Authentication_Account_Access_Detailed_Spec.docx
+
+# Local project planning notes
+/NextStep.md
+
+# TypeScript incremental build cache
+*.tsbuildinfo
