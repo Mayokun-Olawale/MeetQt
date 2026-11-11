@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { parseEventFilters, type EventFilters } from "./filters";
 
 export type Event = {
   categories: string[] | null; price_cents: number | null; audience: string | null; rsvp_required: boolean | null; rsvp_url: string | null;
@@ -8,10 +9,17 @@ export type Event = {
 };
 const columns = "categories, price_cents, audience, rsvp_required, rsvp_url, flyer_path, id, creator_id, title, description, location, starts_at, time_zone, status";
 
-export async function discoverEvents() {
+export async function discoverEvents(filters: EventFilters = parseEventFilters({})) {
   const supabase = await createClient();
-  const { data, error } = await supabase.from("events").select(columns).eq("status", "published")
-    .gt("starts_at", new Date().toISOString()).order("starts_at").order("id").limit(100);
+  let query = supabase.from("events").select(columns).eq("status", "published")
+    .gt("starts_at", new Date().toISOString());
+  if (filters.categories.length) query = query.overlaps("categories", filters.categories);
+  if (filters.audiences.length) query = query.in("audience", filters.audiences);
+  if (filters.price === "free") query = query.eq("price_cents", 0);
+  if (filters.price === "paid") query = query.gt("price_cents", 0);
+  if (filters.minCents !== undefined) query = query.gte("price_cents", filters.minCents);
+  if (filters.maxCents !== undefined) query = query.lte("price_cents", filters.maxCents);
+  const { data, error } = await query.order("starts_at").order("id").limit(100);
   return { events: await withFlyers((data ?? []) as Event[]), error: Boolean(error) };
 }
 

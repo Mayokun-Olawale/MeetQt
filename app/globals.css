@@ -89,6 +89,8 @@ fieldset > p { color: var(--muted); font-size: .875rem; margin-bottom: 1rem; }
 fieldset fieldset { margin-top: 1rem; padding: 1rem; background: var(--background); }
 fieldset fieldset legend { font-size: .875rem; }
 .option-list { display: flex; flex-wrap: wrap; gap: .625rem; }
+.event-filters { margin-block: 1.5rem; }
+.event-filters .actions { align-items: center; margin-top: 1rem; }
 .choice { display: flex; align-items: center; gap: .625rem; padding: .625rem .875rem; min-height: 44px; border: 1px solid var(--border); border-radius: var(--radius); font-weight: 400; cursor: pointer; }
 .choice:hover { border-color: var(--ink); }
 .choice:has(input:checked) { background: var(--pink-soft); border-color: var(--ink); }
@@ -179,3 +181,47 @@ textarea[aria-invalid='true'] { border-color: var(--error); }
 .event-flyer { display: block; width: 100%; height: 300px; object-fit: contain; background: var(--background); border: 1px solid var(--border); border-radius: var(--radius); }
 input[type='file'] { padding: .75rem; }
 input[type='file']::file-selector-button { background: var(--pink); color: var(--ink); border: 1px solid var(--ink); border-radius: var(--radius); padding: .5rem .75rem; margin-right: .75rem; cursor: pointer; }
+
+.event-filters > summary { display: inline-flex; align-items: center; gap: 1.5rem; min-height: 48px; padding: .75rem 1.25rem; border: 1px solid var(--ink); border-radius: var(--radius); background: var(--surface); font-weight: 600; cursor: pointer; list-style: none; }
+.event-filters > summary::-webkit-details-marker { display: none; }
+.event-filters[open] > summary { background: var(--pink-soft); }
+.event-filters[open] .filter-chevron { transform: rotate(180deg); }
+.filter-panel { display: grid; gap: 1.25rem; margin-top: .75rem; padding: 1.25rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.filter-panel fieldset { padding: 1rem; }
+.filter-chips { display: flex; flex-wrap: wrap; gap: .625rem; }
+.filter-chip { position: relative; cursor: pointer; }
+.filter-chip input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.filter-chip span { display: inline-flex; align-items: center; min-height: 44px; padding: .5rem 1rem; border: 1px solid var(--border); border-radius: 999px; font-weight: 400; }
+.filter-chip:hover span { border-color: var(--ink); }
+.filter-chip input:checked + span { background: var(--pink); border-color: var(--ink); font-weight: 600; }
+.filter-chip input:focus-visible + span { outline: 3px solid var(--ink); outline-offset: 3px; }
+.filter-price-range { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; }
+.filter-price-range label { display: grid; gap: .5rem; }
+@media (max-width: 640px) { .filter-price-range { grid-template-columns: 1fr; } }
+
+.event-discovery { max-width: 740px; margin: 1.5rem auto 0; }
+.discovery-help, .discovery-progress { text-align: center; color: var(--muted); font-size: .875rem; }
+.discovery-progress { margin-top: .75rem; font-weight: 600; }
+.discovery-announcement { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.discovery-stage { padding: 1rem 10px; overflow: hidden; }
+.discovery-card { position: relative; border: 1px solid var(--ink); border-radius: 16px; background: var(--surface); overflow: hidden; touch-action: pan-y; transition: transform 180ms ease-out; }
+.discovery-card.is-dragging { transition: none; user-select: none; cursor: grabbing; }
+.discovery-visual { background: var(--pink-soft); border-bottom: 1px solid var(--border); }
+.discovery-flyer { display: block; width: 100%; height: clamp(260px, 50svh, 520px); object-fit: contain; user-select: none; }
+.discovery-no-flyer { min-height: 280px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 2rem; text-align: center; }
+.discovery-no-flyer > span { font-size: 4rem; }
+.discovery-no-flyer > p { font-family: Georgia, serif; font-size: 2rem; }
+.discovery-details { display: grid; gap: 1rem; padding: clamp(1.25rem, 4vw, 2rem); overflow-wrap: anywhere; }
+.discovery-details h2 { font-size: clamp(1.75rem, 4vw, 2.5rem); }
+.discovery-price { font-weight: 600; }
+.swipe-label { position: absolute; z-index: 1; top: 1rem; padding: .5rem 1rem; border: 2px solid var(--ink); border-radius: var(--radius); font-weight: 700; text-transform: uppercase; background: var(--surface); }
+.swipe-interested { left: 1rem; background: var(--pink); }
+.swipe-skip { right: 1rem; }
+.discovery-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding-inline: 10px; }
+.discovery-controls button { min-height: 56px; }
+.discovery-note { text-align: center; margin: 1rem auto; max-width: 560px; }
+.discovery-end { display: grid; gap: 1rem; margin-top: 1rem; }
+.discovery-end .actions { margin-top: .5rem; align-items: center; }
+.discovery-loading { max-width: 720px; margin: 2rem auto; text-align: center; }
+.discovery-loading-card { height: 420px; background: var(--pink-soft); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 1rem; }
+@media (prefers-reduced-motion: reduce) { .discovery-card { transition: none; } }
