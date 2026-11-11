@@ -1,4 +1,5 @@
 import { eventCategories, eventAudiences, wordCount } from "./options";
+import { hasMinimumEventNotice, EVENT_NOTICE_MESSAGE } from "./scheduling";
 import { z } from "zod";
 import { MAX_FLYER_BYTES, FLYER_TYPES } from "./flyer";
 
@@ -13,7 +14,7 @@ export const eventSchema = z.object({
   title: z.string().trim().min(3, "Use at least 3 characters.").max(100, "Use 100 characters or fewer."),
   description: z.string().trim().min(10, "Tell people a little more (at least 10 characters).").refine((value) => wordCount(value) <= 250, "Use 250 words or fewer."),
   location: z.string().trim().min(3, "Enter a location.").max(200, "Use 200 characters or fewer."),
-  startsAt: z.iso.datetime({ offset: true }).refine((value) => Date.parse(value) > Date.now(), "Choose a future date and time."),
+  startsAt: z.iso.datetime({ offset: true }).refine((value) => hasMinimumEventNotice(value), EVENT_NOTICE_MESSAGE),
   timeZone: z.string().max(100).refine((value) => {
     try { new Intl.DateTimeFormat("en-US", { timeZone: value }); return Boolean(value); } catch { return false; }
   }, "Choose a valid time zone."),

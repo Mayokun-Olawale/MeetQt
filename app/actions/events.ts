@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireCompleteProfile } from "@/lib/profile/server";
 import { flyerExtension } from "@/lib/events/flyer";
+import { hasMinimumEventNotice, EVENT_NOTICE_MESSAGE } from "@/lib/events/scheduling";
 import { eventSchema } from "@/lib/events/validation";
 import type { FormState } from "@/lib/validation/auth";
 import { validationState } from "@/lib/validation/auth";
@@ -31,6 +32,7 @@ export async function createEvent(_: FormState, formData: FormData): Promise<For
     // Log database diagnostics on the server, without form data or account details.
     console.error("Event insert failed", { code: error.code, message: error.message });
     await supabase.storage.from("event-flyers").remove([flyerPath]);
+    if (!hasMinimumEventNotice(startsAt)) return { fieldErrors: { startsAt: [EVENT_NOTICE_MESSAGE] } };
     const reference = error.code ? ` (reference: ${error.code})` : "";
     return { error: `We couldn’t publish your event. Please try again.${reference}` };
   }

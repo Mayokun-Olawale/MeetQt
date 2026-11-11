@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { flyerExtension } from "../lib/events/flyer";
 import { eventSchema } from "../lib/events/validation";
 
-const valid = () => ({ categories: ["Fitness"], priceType: "free", priceAmount: "", audience: "18+", rsvpRequired: "no", rsvpUrl: "", flyer: new File([new Uint8Array([137,80,78,71,13,10,26,10])], "flyer.png", { type: "image/png" }), title: "  Coffee & conversation  ", description: "Meet at the café for a relaxed afternoon.", location: "Local Café, 100 Main Street", startsAt: new Date(Date.now() + 86400000).toISOString(), timeZone: "America/Chicago" });
+const valid = () => ({ categories: ["Fitness"], priceType: "free", priceAmount: "", audience: "18+", rsvpRequired: "no", rsvpUrl: "", flyer: new File([new Uint8Array([137,80,78,71,13,10,26,10])], "flyer.png", { type: "image/png" }), title: "  Coffee & conversation  ", description: "Meet at the café for a relaxed afternoon.", location: "Local Café, 100 Main Street", startsAt: new Date(Date.now() + 2 * 86400000).toISOString(), timeZone: "America/Chicago" });
 test("accepts a future event and trims its title", () => {
   const result = eventSchema.parse(valid());
   assert.equal(result.title, "Coffee & conversation");
@@ -51,4 +51,10 @@ test("requires a safe RSVP URL only when RSVP is needed", () => {
 });
 test("requires an audience and explicit price and RSVP choices", () => {
   for (const change of [{ audience: "" }, { priceType: "" }, { rsvpRequired: "" }]) assert.equal(eventSchema.safeParse({ ...valid(), ...change }).success, false);
+});
+
+ test("rejects events starting less than 24 hours away", () => {
+  const result = eventSchema.safeParse({ ...valid(), startsAt: new Date(Date.now() + 23 * 3600000).toISOString() });
+  assert.equal(result.success, false);
+  if (!result.success) assert.ok(result.error.issues.some((issue) => issue.path[0] === "startsAt" && issue.message.includes("24 hours")));
 });
