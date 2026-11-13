@@ -5,8 +5,39 @@ Next.js App Router, React, TypeScript, Supabase Auth/Postgres/Storage.
 
 ## Run locally with Docker (no Supabase account)
 
-Install Node.js 22 or newer, Git, and Docker Desktop (or Docker Engine). Start
-Docker before running these commands:
+### Install the prerequisites
+
+Install Node.js 22 or newer and Git. You also need Docker installed and running;
+`npm install` does not install Docker.
+
+On macOS:
+
+1. Download [Docker Desktop for Mac](https://docs.docker.com/desktop/setup/install/mac-install/).
+   Choose **Apple silicon** for an M-series chip or **Intel** for an Intel processor.
+   You can check your chip under **Apple menu → About This Mac**.
+2. Open the downloaded `.dmg` and drag Docker into Applications.
+3. Open **Docker** from Applications and complete the setup prompts.
+4. Wait until Docker's engine is running, then reopen your terminal (or the
+   integrated terminal in your editor).
+
+For other operating systems, follow Docker's official
+[Windows installation guide](https://docs.docker.com/desktop/setup/install/windows-install/)
+or [Linux installation guide](https://docs.docker.com/engine/install/).
+
+Verify Docker before starting the project:
+
+```bash
+docker info
+```
+
+This should show server information without a connection error. If you see
+`docker: command not found`, finish installing Docker and ensure its CLI is on
+your PATH, then reopen the terminal. If it cannot connect to the Docker daemon,
+open Docker Desktop (or start Docker Engine on Linux) and wait for it to be ready.
+
+### Clone and start the project
+
+With Docker running:
 
 ```bash
 git clone https://github.com/Mayokun-Olawale/MeetQt.git
@@ -21,6 +52,11 @@ applies every migration, creates flyer storage and the matching schedule, and
 loads demo data. No Supabase login, cloud API keys, or manual SQL is required.
 The app reads local public connection settings automatically on a fresh clone.
 The app runs with Node.js; Supabase runs in Docker.
+
+The first `npx supabase start` can take several minutes while downloading images
+and initializing services. Leave it running while download progress or new log
+messages appear. Wait for it to finish successfully before running `npm run dev`.
+Later starts normally take less time because the images are already downloaded.
 
 Two ready-to-use accounts are included:
 
