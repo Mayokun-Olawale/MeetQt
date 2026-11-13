@@ -3,11 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/dev.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "node tests/run-tests.mjs"
+    "test": "node tests/run-tests.mjs && node --test tests/*.test.mjs",
+    "dev:local": "node scripts/dev.mjs --local",
+    "db:bundle": "node scripts/bundle-supabase.mjs",
+    "db:bundle-local-demo": "node scripts/bundle-local-demo.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",
@@ -23,6 +26,10 @@
     "@types/react-dom": "^19.1.0",
     "eslint": "^9.0.0",
     "eslint-config-next": "^16.4.1",
+    "supabase": "3.1.0",
     "typescript": "^5.8.0"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

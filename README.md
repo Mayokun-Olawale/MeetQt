@@ -3,6 +3,59 @@
 MeetQ helps people discover events and connect over shared interests. It uses
 Next.js App Router, React, TypeScript, Supabase Auth/Postgres/Storage.
 
+## Run locally with Docker (no Supabase account)
+
+Install Node.js 22 or newer, Git, and Docker Desktop (or Docker Engine). Start
+Docker before running these commands:
+
+```bash
+git clone https://github.com/Mayokun-Olawale/MeetQt.git
+cd MeetQt
+npm install
+npx supabase start
+npm run dev
+```
+
+Open http://localhost:3000. The first start downloads the Supabase Docker images,
+applies every migration, creates flyer storage and the matching schedule, and
+loads demo data. No Supabase login, cloud API keys, or manual SQL is required.
+The app reads local public connection settings automatically on a fresh clone.
+The app runs with Node.js; Supabase runs in Docker.
+
+Two ready-to-use accounts are included:
+
+| Email | Password |
+| --- | --- |
+| `demo1@example.com` | `MeetQ-Demo-2026!` |
+| `demo2@example.com` | `MeetQ-Demo-2026!` |
+
+Both have completed profiles and separate groups for the first two demo events.
+The seed includes 30 fictional attendees, five events, revealed matches, a match
+countdown, and events available in Discover. Demo dates are relative to database
+initialization. These are independent local accounts, not copies of hosted users.
+
+You can also sign up normally. Confirmation and password-reset emails appear in
+the local inbox at http://localhost:54324; they are not delivered to real inboxes.
+The local database dashboard is at http://localhost:54323.
+
+If you already have `.env.local` for a hosted project, `npm run dev` preserves
+that setup. Use `npm run dev:local` to explicitly select Docker without editing
+or overwriting that file. Local mode passes only the public API key to Next.js.
+
+Stop the app with Ctrl+C and stop Supabase with `npx supabase stop`. Running
+`npx supabase start` resumes the saved local database. To **erase local data**,
+reapply migrations, and refresh demo dates, run `npx supabase db reset --local`.
+Keep Docker running for scheduled matching to execute.
+
+This workflow uses the [Supabase local development stack](https://supabase.com/docs/guides/local-development).
+Seeds run on initial creation and database reset, as described in the
+[seeding guide](https://supabase.com/docs/guides/local-development/seeding-your-database).
+Local demo credentials are public fixtures and must not be loaded into production.
+
+## Optional: use hosted Supabase instead
+
+The following steps are only for a hosted backend. Skip them for Docker.
+
 ## 1. Get the source and install dependencies
 
 Clone the repository using its actual URL, or extract a complete source archive,
@@ -40,20 +93,21 @@ file. Keep the Supabase Data API enabled with the `public` schema exposed.
 For a **new, empty Supabase project**, open the project's SQL Editor, paste the
 entire contents of [supabase/setup.sql](supabase/setup.sql), and run it once as
 the database administrator. This is the consolidated version of migrations
-0001–0008, including:
+0001–0012, including:
 
 - Profiles, the signup trigger, onboarding fields, and owner-only access rules.
 - Events, ownership/cancellation rules, categories, pricing, audience, and RSVP.
 - The private `event-flyers` Storage bucket, a 4 MB image limit, and upload rules.
 - The event/flyer policy fix needed for publishing.
+- Saved interests, the 24-hour creation deadline, scheduled matching, and shared profiles.
 
 The script runs in one transaction. It requires Supabase's existing `auth` and
 `storage` schemas; it is not a standalone vanilla PostgreSQL setup. The bucket
 is created by the SQL, so there is no separate manual bucket creation step.
 
 The consolidated script is for fresh installations and must not be rerun on an
-existing project. Earlier migration files retained in the repository are historical;
-the complete schema is maintained in `supabase/setup.sql`.
+existing project. The migration files are the schema source of truth; regenerate the consolidated
+file with `npm run db:bundle` after editing them.
 
 For an **existing project**, preserve its data and apply only the schema changes
 that have not already been applied. Review the source sections in `setup.sql`
@@ -117,7 +171,8 @@ removes the event from discovery while keeping it in the creator's dashboard.
 `profiles.onboarding_completed_at` is null until setup finishes. Incomplete
 accounts go to onboarding; completed accounts can access the account pages.
 Profiles contain names, Instagram handles, interests, matching preferences, and
-compatibility answers. Current profile reads/updates are restricted to the owner.
+compatibility answers. Direct profile reads/updates are restricted to the owner; an authorized RPC
+shares selected fields with revealed group members.
 
 Events require a flyer, 1–3 categories, a free/paid price in USD, one audience
 selection, an RSVP preference/link when required, and a description of at most
@@ -126,9 +181,10 @@ zone; event cards display the stored time zone. Discovery lists up to 100 upcomi
 published events. My events lists up to 100 of the account's events, including
 past and cancelled ones. Flyer images use temporary signed URLs.
 
-My matches displays “Matching not enabled” for opted-out accounts. Opted-in
-accounts currently see a coming-soon empty state. Event participation, automated
-matching, scheduled group reveals, and group-member profiles remain future work.
+My Matches shows a countdown until 12 hours before an interested event. Opted-in
+attendees are grouped by shared interests and compatibility answers. Revealed
+group members can open each other’s shared profiles. Interested events persist
+and disappear from that list when they start. New events require 24 hours notice.
 
 ## Checks and database tests
 
@@ -172,4 +228,4 @@ actions. Set the same three environment variables using the new copy's Supabase
 project and real HTTPS site URL. Update Supabase's Site URL and redirect allow-list
 for `https://YOUR_DOMAIN/auth/confirm`, then rebuild/redeploy. The host must accept
 the configured 6 MB server-action request limit for flyer uploads. The setup SQL
-does not provision hosting, SMTP, or future matching schedules.
+creates the matching schedule, but does not provision hosting or SMTP.

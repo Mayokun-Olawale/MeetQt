@@ -443,3 +443,7 @@ MeetQ_Authentication_Account_Access_Detailed_Spec.docx
 
 # TypeScript incremental build cache
 *.tsbuildinfo
+
+# Local Supabase CLI state
+/supabase/.temp/
+/supabase/.branches/
